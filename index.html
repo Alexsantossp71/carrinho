@@ -83,19 +83,29 @@
 
     <div class="ui-container">
         <h1>Three.js - Carrinho de Compras</h1>
-        <p>Renderização de Módulo Seguro</p>
+        <p>Arquitetura Padrão ES6 Modules</p>
     </div>
 
-    <div id="status-monitor">🔄 Inicializando módulos de renderização...</div>
+    <div id="status-monitor">🔄 Mapeando dependências do motor 3D...</div>
 
     <button class="btn-restart" id="restartBtn">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- CÓDIGO RESOLVIDO: Utilizando importações diretas em escopo fechado -->
+    <!-- Mapeamento Oficial: Ensina o navegador a resolver os escopos tridimensionais sem conflitos -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com",
+                "three/addons/": "https://unpkg.com"
+            }
+        }
+    </script>
+
+    <!-- Bloco de Execução Isolado -->
     <script type="module">
-        import * as THREE from 'https://jsdelivr.net';
-        import { GLTFLoader } from 'https://jsdelivr.net';
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         let scene, camera, renderer, shoppingCart;
         let targetX = 0; 
@@ -107,6 +117,7 @@
         function init() {
             const container = document.getElementById('canvas-container');
 
+            // Inicializando a Cena de forma isolada
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
@@ -119,7 +130,7 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Configuração de Luzes para materiais metálicos
+            // Luz Ambiente e Direcionais para materiais PBR (metálicos)
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
@@ -135,16 +146,16 @@
             gridHelper.position.y = -1;
             scene.add(gridHelper);
 
-            // Executando o carregador assíncrono interno
+            // Carregamento Seguro usando o Loader Modular verificado da documentação
             const loader = new GLTFLoader();
-            statusMonitor.textContent = "⏳ Conectando ao arquivo Trolly 125.glb...";
+            statusMonitor.textContent = "⏳ Localizando arquivo 'Trolly 125.glb'...";
             
             loader.load(
                 modelPath, 
                 function (gltf) {
                     shoppingCart = gltf.scene;
 
-                    // Ajustes de escala e rotação iniciais
+                    // Ajustes de Proporção
                     shoppingCart.scale.set(1.5, 1.5, 1.5); 
                     shoppingCart.rotation.y = Math.PI / 2; 
                     shoppingCart.position.set(-10, -1, 0); 
@@ -153,21 +164,21 @@
                     
                     statusMonitor.style.color = "#00f2fe";
                     statusMonitor.style.borderColor = "rgba(0, 242, 254, 0.4)";
-                    statusMonitor.textContent = "✅ Modelo carregado com sucesso!";
+                    statusMonitor.textContent = "✅ Pronto! Carrinho renderizado.";
                     
                     isEntering = true;
                 },
                 function (xhr) {
                     if (xhr.total > 0) {
                         const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                        statusMonitor.textContent = `⏳ Baixando modelo: ${percent}%`;
+                        statusMonitor.textContent = `⏳ Buscando texturas: ${percent}%`;
                     }
                 },
                 function (error) {
                     console.error(error);
                     statusMonitor.style.color = "#ff4757";
                     statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
-                    statusMonitor.textContent = "❌ Erro: Arquivo do carrinho não foi localizado.";
+                    statusMonitor.textContent = "❌ Erro 404: Verifique o nome da pasta e do arquivo .glb.";
                 }
             );
 
@@ -181,6 +192,7 @@
             requestAnimationFrame(animate);
 
             if (shoppingCart && isEntering) {
+                // Entrada linear suave (Lerp)
                 shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
                 
                 if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
@@ -188,6 +200,7 @@
                     isEntering = false;
                 }
             } else if (shoppingCart) {
+                // Rotação contínua após atingir o centro
                 shoppingCart.rotation.y += 0.008;
             }
 
@@ -208,8 +221,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Garante a execução apenas após a árvore completa estar montada
-        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
