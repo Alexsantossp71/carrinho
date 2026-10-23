@@ -3,93 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Portfólio</title>
+    <title>Animação de Carrinho de Compras</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1e1e2f, #252542);
             color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
         }
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .profile-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 3px solid #00f2fe;
-            margin-bottom: 20px;
-            object-fit: cover;
-        }
+
         h1 {
-            font-size: 24px;
             margin-bottom: 10px;
             color: #00f2fe;
         }
-        p {
-            font-size: 16px;
+
+        p.instrucao {
             color: #b3b3b3;
-            margin-bottom: 30px;
-            line-height: 1.5;
+            margin-bottom: 40px;
         }
-        .links {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .btn {
-            text-decoration: none;
-            color: #ffffff;
+
+        /* Topo fixo com o Carrinho de Compras */
+        .cart-container {
+            position: fixed;
+            top: 20px;
+            right: 40px;
             background: rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
         }
-        .btn:hover {
+
+        .cart-icon {
+            font-size: 30px;
+            transition: transform 0.2s ease;
+        }
+
+        .cart-count {
+            background-color: #ff4757;
+            color: white;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 16px;
+        }
+
+        /* Efeito de Tremor (Shake) no carrinho quando o item cai dentro */
+        .shake {
+            animation: shakeCart 0.4s ease-in-out;
+        }
+
+        @keyframes shakeCart {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.1) rotate(-10deg); }
+            50% { transform: scale(1.1) rotate(10deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+            100% { transform: scale(1); }
+        }
+
+        /* Grade de Produtos */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 40px;
+        }
+
+        .product-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .product-img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            background: #fff;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .product-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            color: #00f2fe;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .add-to-cart-btn {
             background: #00f2fe;
             color: #1e1e2f;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #00c7d4;
+        }
+
+        /* Elemento Fantasma Animado (O produto que vai voar/cair) */
+        .flying-item {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            object-fit: contain;
+            background: #fff;
+            border-radius: 10px;
+            padding: 5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <!-- Você pode substituir por uma foto sua hospedada ou no seu repositório -->
-        <img class="profile-img" src="https://picsum.photos" alt="Foto de Perfil">
-        
-        <h1>Seu Nome Aqui</h1>
-        <p>Desenvolvedor em início de carreira focado em criar soluções web e aprender novas tecnologias diariamente.</p>
-        
-        <div class="links">
-            <a href="https://github.com" target="_blank" class="btn">Meu GitHub</a>
-            <a href="https://linkedin.com" target="_blank" class="btn">LinkedIn</a>
-            <a href="mailto:seu-email@email.com" class="btn">Contato por E-mail</a>
-        </div>
+    <!-- Ícone do Carrinho Fixo no Canto -->
+    <div class="cart-container" id="cartContainer">
+        <div class="cart-icon" id="cartIcon">🛒</div>
+        <div class="cart-count" id="cartCount">0</div>
     </div>
 
+    <h1>Nossa Loja de Variedades</h1>
+    <p class="instrucao">Clique em "Adicionar" para ver o produto voar e cair no carrinho!</p>
+
+    <!-- Vitrine de Produtos -->
+    <div class="products-grid">
+        
+        <!-- Produto 1 -->
+        <div class="product-card">
+            <img src="https://flaticon.com" class="product-img" alt="Notebook">
+            <div class="product-title">Notebook Gamer</div>
+            <div class="product-price">R$ 4.599,00</div>
+            <button class="add-to-cart-btn" onclick="animateToCart(this)">Adicionar</button>
+        </div>
+
+        <!-- Produto 2 -->
+        <div class="product-card">
+            <img src="https://flaticon.com" class="product-img" alt="Smartphone">
+            <div class="product-title">Smartphone 5G</div>
+            <div class="product-price">R$ 2.499,00</div>
+            <button class="add-to-cart-btn" onclick="animateToCart(this)">Adicionar</button>
+        </div>
+
+        <!-- Produto 3 -->
+        <div class="product-card">
+            <img src="https://flaticon.com" class="product-img" alt="Fone de Ouvido">
+            <div class="product-title">Fone Bluetooth</div>
+            <div class="product-price">R$ 349,00</div>
+            <button class="add-to-cart-btn" onclick="animateToCart(this)">Adicionar</button>
+        </div>
+
+    </div>
+
+    <script>
+        let itemCount = 0;
+
+        function animateToCart(button) {
+            // 1. Encontra a imagem do produto correspondente ao botão clicado
+            const productCard = button.closest('.product-card');
+            const productImg = productCard.querySelector('.product-img');
+            const cartContainer = document.getElementById('cartContainer');
+            const cartCount = document.getElementById('cartCount');
+
+            // 2. Descobre as posições exatas na tela (Imagem e Carrinho de destino)
+            const imgRect = productImg.getBoundingClientRect();
+            const cartRect = cartContainer.getBoundingClientRect();
+
+            // 3. Cria uma cópia (clone) da imagem para fazer a animação de voo
+            const clone = productImg.cloneNode(true);
+            clone.classList.add('flying-item');
+            
+            // Define o tamanho e posição inicial do clone exatamente em cima da foto original
+            clone.style.width = imgRect.width + 'px';
+            clone.style.height = imgRect.height + 'px';
+            clone.style.top = imgRect.top + 'px';
+            clone.style.left = imgRect.left + 'px';
+
+            document.body.appendChild(clone);
+
+            // 4. Dispara o movimento em direção ao carrinho usando um pequeno delay (setTimeout)
+            setTimeout(() => {
+                clone.style.top = (cartRect.top + 10) + 'px';
+                clone.style.left = (cartRect.left + 10) + 'px';
+                clone.style.width = '20px'; // Encolhe o produto enquanto ele cai no carrinho
+                clone.style.height = '20px';
+                clone.style.opacity = '0.2';
+                clone.style.transform = 'rotate(360deg)'; // Faz o produto girar enquanto cai
+            }, 50);
+
+            // 5. Quando a animação de voo termina (800ms)
+            setTimeout(() => {
+                // Remove o clone da tela
+                clone.remove();
+
+                // Atualiza o contador de itens
+                itemCount++;
+                cartCount.textContent = itemCount;
+
+                // Adiciona a classe de tremor no carrinho
+                cartContainer.classList.add('shake');
+                
+                // Remove a classe de tremor após a animação acabar para poder tremer de novo no próximo clique
+                setTimeout(() => {
+                    cartContainer.classList.remove('shake');
+                }, 400);
+
+            }, 850);
+        }
+    </script>
 </body>
 </html>
-
-
