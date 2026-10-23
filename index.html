@@ -26,7 +26,7 @@
             pointer-events: none;
         }
         h1 {
-            font-size: 28px;
+            font-size: 26px;
             color: #00f2fe;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -36,6 +36,19 @@
         p {
             color: #8888a0;
             font-size: 14px;
+        }
+        #status-monitor {
+            position: absolute;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #ffb703;
+            border: 1px solid rgba(255, 183, 3, 0.3);
         }
         .btn-restart {
             position: absolute;
@@ -69,34 +82,44 @@
 <body>
 
     <div class="ui-container">
-        <h1>Three.js - Modelo GLB</h1>
-        <p>Carregando o carrinho real do arquivo Trolly 125.glb</p>
+        <h1>Three.js - Carrinho de Compras</h1>
+        <p>Modelo carregado via CDN ultrarrápido</p>
     </div>
+
+    <div id="status-monitor">🔄 Conectando aos servidores 3D estáveis...</div>
 
     <button class="btn-restart" onclick="resetAnimation()">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- Scripts do Three.js e do Carregador GLTF/GLB -->
+    <!-- SUBSTITUIÇÃO CRÍTICA: Trocado jsdelivr por cdnjs (Cloudflare) para evitar erros de conexão -->
     <script src="https://cloudflare.com"></script>
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://unpkg.com"></script>
 
     <script>
         let scene, camera, renderer, shoppingCart;
         let targetX = 0; 
-        let isEntering = false; // Só ativa a movimentação quando o modelo terminar de carregar
+        let isEntering = false;
 
-        // Caminho exato apontando para o seu arquivo enviado
-        const modelPath = './shopping-trolley2/source/Trolly 125.glb';
+        // Caminho do seu arquivo no repositório do GitHub
+        const modelPath = 'shopping-trolley2/source/Trolly 125.glb';
 
         function init() {
             const container = document.getElementById('canvas-container');
+            const statusMonitor = document.getElementById('status-monitor');
+
+            // Garantia extra de carregamento dos scripts antes de rodar o motor
+            if (typeof THREE === 'undefined') {
+                statusMonitor.style.color = "#ff4757";
+                statusMonitor.textContent = "❌ Falha crítica: Bibliotecas 3D não carregaram. Recarregue a página.";
+                return;
+            }
 
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 4, 8); // Subi um pouco a câmera para enquadrar melhor o modelo real
+            camera.position.set(0, 4, 8); 
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -104,48 +127,55 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Iluminação reforçada para destacar texturas e metais realistas do GLB
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            // Luzes ambiente e direcionais
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
             const dirLight1 = new THREE.DirectionLight(0xffffff, 1.5);
             dirLight1.position.set(5, 10, 7);
             scene.add(dirLight1);
 
-            const dirLight2 = new THREE.DirectionLight(0x00f2fe, 1.0);
+            const dirLight2 = new THREE.DirectionLight(0x00f2fe, 1.2);
             dirLight2.position.set(-5, 5, -5);
             scene.add(dirLight2);
 
-            // Adiciona o grid no chão para dar noção de espaço tridimensional
             const gridHelper = new THREE.GridHelper(30, 30, 0x00f2fe, 0x222244);
             gridHelper.position.y = -1;
             scene.add(gridHelper);
 
-            // CARREGANDO O SEU MODELO 3D REAL (.GLB)
+            // Carregador de modelos GLTF/GLB
             const loader = new THREE.GLTFLoader();
+            statusMonitor.textContent = "⏳ Baixando modelo 3D do carrinho...";
+            
             loader.load(
                 modelPath, 
                 function (gltf) {
                     shoppingCart = gltf.scene;
 
-                    // Ajuste de escala (Modelos da internet às vezes vêm muito grandes ou muito pequenos)
-                    // Se o carrinho sumir ou ficar gigante, mexa nesses valores abaixo:
+                    // Ajuste padrão de tamanho e rotação inicial do carrinho
                     shoppingCart.scale.set(1.5, 1.5, 1.5); 
-
-                    // Define a rotação inicial para ele entrar "de frente" ou de lado conforme o eixo original
                     shoppingCart.rotation.y = Math.PI / 2; 
-
-                    // Coloca o carrinho escondido na esquerda (fora da tela) para começar o slide
                     shoppingCart.position.set(-10, -1, 0); 
                     
                     scene.add(shoppingCart);
                     
-                    // Libera a animação agora que o modelo está carregado na memória
+                    statusMonitor.style.color = "#00f2fe";
+                    statusMonitor.style.borderColor = "rgba(0, 242, 254, 0.4)";
+                    statusMonitor.textContent = "✅ Pronto! Carrinho carregado.";
+                    
                     isEntering = true;
                 },
-                undefined,
+                function (xhr) {
+                    if (xhr.total > 0) {
+                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                        statusMonitor.textContent = `⏳ Carregando: ${percent}%`;
+                    }
+                },
                 function (error) {
-                    console.error('Erro ao carregar o modelo 3D do carrinho:', error);
+                    console.error(error);
+                    statusMonitor.style.color = "#ff4757";
+                    statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
+                    statusMonitor.textContent = "❌ Erro: O arquivo 'Trolly 125.glb' não foi achado na pasta.";
                 }
             );
 
@@ -156,18 +186,14 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Se o carrinho já foi carregado e está no estágio de entrada
             if (shoppingCart && isEntering) {
-                // Interpolação suave em direção ao centro (X = 0)
                 shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
                 
-                // Se chegou bem perto do centro, para de andar e começa o giro de vitrine
                 if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
                     shoppingCart.position.x = targetX;
                     isEntering = false;
                 }
             } else if (shoppingCart) {
-                // Rotação suave contínua no centro da tela
                 shoppingCart.rotation.y += 0.008;
             }
 
@@ -177,8 +203,8 @@
         function resetAnimation() {
             if (shoppingCart) {
                 isEntering = true;
-                shoppingCart.rotation.y = Math.PI / 2; // Reseta rotação para a posição de movimento
-                shoppingCart.position.set(-10, -1, 0); // Joga de volta para fora da tela na esquerda
+                shoppingCart.rotation.y = Math.PI / 2; 
+                shoppingCart.position.set(-10, -1, 0); 
             }
         }
 
@@ -192,4 +218,3 @@
     </script>
 </body>
 </html>
-
