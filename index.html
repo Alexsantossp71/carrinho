@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animação 3D - Carrinho Realista</title>
+    <title>Animação 3D - Carrinho de Compras</title>
     <style>
         * {
             box-sizing: border-box;
@@ -36,19 +36,6 @@
         p {
             color: #8888a0;
             font-size: 14px;
-        }
-        #status-monitor {
-            position: absolute;
-            top: 110px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 13px;
-            color: #ffb703;
-            border: 1px solid rgba(255, 183, 3, 0.3);
         }
         .btn-restart {
             position: absolute;
@@ -83,102 +70,103 @@
 
     <div class="ui-container">
         <h1>Three.js - Carrinho de Compras</h1>
-        <p>Renderização com Scripts Estáveis Integrados</p>
+        <p>Renderização 3D Nativa Estabilizada</p>
     </div>
-
-    <div id="status-monitor">🔄 Conectando às bibliotecas de renderização...</div>
 
     <button class="btn-restart" onclick="resetAnimation()">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- Links Oficiais do CDNJS da Cloudflare - Sem bloqueios de CORS -->
+    <!-- Apenas UMA biblioteca ultraestável via CDNJS da Cloudflare -->
     <script src="https://cloudflare.com"></script>
-    <script src="https://jsdelivr.net"></script>
 
     <script>
         let scene, camera, renderer, shoppingCart;
         let targetX = 0; 
-        let isEntering = false;
-
-        // Estrutura de pastas do seu repositório GitHub
-        const modelPath = 'shopping-trolley2/source/Trolly 125.glb';
+        let isEntering = true;
 
         function init() {
             const container = document.getElementById('canvas-container');
-            const statusMonitor = document.getElementById('status-monitor');
 
-            // Validação direta no escopo global
-            if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
-                statusMonitor.style.color = "#ff4757";
-                statusMonitor.textContent = "❌ Erro ao inicializar dependências. Recarregue a página.";
-                return;
-            }
-
-            // Inicializando o Cenário Tridimensional
+            // Inicializando a Cena
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
+            // Configurando Câmera
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 4, 8); 
+            camera.position.set(0, 3, 7); 
             camera.lookAt(0, 0, 0);
 
+            // Inicializando Renderizador
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Iluminação para o metal e material do carrinho
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+            // Configuração de Luzes Básicas
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambientLight);
 
-            const dirLight1 = new THREE.DirectionLight(0xffffff, 1.5);
-            dirLight1.position.set(5, 10, 7);
-            scene.add(dirLight1);
+            const dirLight = new THREE.DirectionLight(0x00f2fe, 1.5);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
 
-            const dirLight2 = new THREE.DirectionLight(0x00f2fe, 1.2);
-            dirLight2.position.set(-5, 5, -5);
-            scene.add(dirLight2);
-
+            // Adiciona o grid no chão para dar profundidade espacial
             const gridHelper = new THREE.GridHelper(30, 30, 0x00f2fe, 0x222244);
-            gridHelper.position.y = -1;
+            gridHelper.position.y = -0.5;
             scene.add(gridHelper);
 
-            // Chamando o carregador do repositório estável
-            const loader = new THREE.GLTFLoader();
-            statusMonitor.textContent = "⏳ Carregando arquivo: Trolly 125.glb...";
-            
-            loader.load(
-                modelPath, 
-                function (gltf) {
-                    shoppingCart = gltf.scene;
+            // CONSTRUINDO O CARRINHO MANUALMENTE VIA GEOMETRIAS NATIVAS
+            shoppingCart = new THREE.Group();
 
-                    // Ajustes de proporção e posicionamento
-                    shoppingCart.scale.set(1.5, 1.5, 1.5); 
-                    shoppingCart.rotation.y = Math.PI / 2; 
-                    shoppingCart.position.set(-10, -1, 0); 
-                    
-                    scene.add(shoppingCart);
-                    
-                    statusMonitor.style.color = "#00f2fe";
-                    statusMonitor.style.borderColor = "rgba(0, 242, 254, 0.4)";
-                    statusMonitor.textContent = "✅ Modelo 3D carregado com sucesso!";
-                    
-                    isEntering = true;
-                },
-                function (xhr) {
-                    if (xhr.total > 0) {
-                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                        statusMonitor.textContent = `⏳ Baixando elementos: ${percent}%`;
-                    }
-                },
-                function (error) {
-                    console.error(error);
-                    statusMonitor.style.color = "#ff4757";
-                    statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
-                    statusMonitor.textContent = "❌ Erro 404: Arquivo 'Trolly 125.glb' não encontrado.";
-                }
-            );
+            const metalMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff, 
+                wireframe: true,
+                roughness: 0.2,
+                metalness: 0.8
+            });
+            const blackMaterial = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.5 });
+
+            // Cesto do Carrinho (Cubo Aramado)
+            const basketGeo = new THREE.BoxGeometry(2, 1.2, 1.4);
+            const basket = new THREE.Mesh(basketGeo, metalMaterial);
+            basket.position.y = 0.6;
+            shoppingCart.add(basket);
+
+            // Grade Inferior (Chassi)
+            const baseGeo = new THREE.BoxGeometry(2, 0.1, 1.2);
+            const base = new THREE.Mesh(baseGeo, metalMaterial);
+            base.position.y = -0.1;
+            shoppingCart.add(base);
+
+            // Hastes de suporte
+            const barGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.7);
+            const bar1 = new THREE.Mesh(barGeo, blackMaterial); bar1.position.set(0.7, 0.2, 0.5);
+            const bar2 = bar1.clone(); bar2.position.set(-0.7, 0.2, 0.5);
+            const bar3 = bar1.clone(); bar3.position.set(0.7, 0.2, -0.5);
+            const bar4 = bar1.clone(); bar4.position.set(-0.7, 0.2, -0.5);
+            shoppingCart.add(bar1, bar2, bar3, bar4);
+
+            // Rodas (Cilindros deitados)
+            const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.2, 16);
+            wheelGeo.rotateZ(Math.PI / 2); 
+
+            const wheel1 = new THREE.Mesh(wheelGeo, blackMaterial); wheel1.position.set(0.7, -0.35, 0.5);
+            const wheel2 = wheel1.clone(); wheel2.position.set(-0.7, -0.35, 0.5);
+            const wheel3 = wheel1.clone(); wheel3.position.set(0.7, -0.35, -0.5);
+            const wheel4 = wheel1.clone(); wheel4.position.set(-0.7, -0.35, -0.5);
+            shoppingCart.add(wheel1, wheel2, wheel3, wheel4);
+
+            // Alça de empurrar
+            const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4);
+            handleGeo.rotateX(Math.PI / 2);
+            const handle = new THREE.Mesh(handleGeo, blackMaterial);
+            handle.position.set(-1.05, 1.1, 0);
+            shoppingCart.add(handle);
+
+            // Define posição inicial escondido na esquerda
+            shoppingCart.position.set(-10, 0, 0);
+            scene.add(shoppingCart);
 
             window.addEventListener('resize', onWindowResize, false);
             animate();
@@ -188,16 +176,23 @@
             requestAnimationFrame(animate);
 
             if (shoppingCart && isEntering) {
-                // Deslocamento controlado em direção ao centro
+                // Movimento suave de entrada em direção ao centro (X = 0)
                 shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
                 
+                // Rotaciona as rodas simulando o movimento
+                shoppingCart.children.forEach(child => {
+                    if(child.geometry && child.geometry.type === "CylinderGeometry" && child.position.y < 0) {
+                        child.rotation.z -= 0.15;
+                    }
+                });
+
                 if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
                     shoppingCart.position.x = targetX;
                     isEntering = false;
                 }
             } else if (shoppingCart) {
-                // Rotação contínua após a parada
-                shoppingCart.rotation.y += 0.008;
+                // Gira suavemente no showroom após estacionar no centro
+                shoppingCart.rotation.y += 0.01;
             }
 
             renderer.render(scene, camera);
@@ -206,8 +201,8 @@
         function resetAnimation() {
             if (shoppingCart) {
                 isEntering = true;
-                shoppingCart.rotation.y = Math.PI / 2; 
-                shoppingCart.position.set(-10, -1, 0); 
+                shoppingCart.rotation.y = 0; 
+                shoppingCart.position.set(-10, 0, 0); 
             }
         }
 
