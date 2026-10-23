@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animação 3D - Carrinho de Compras</title>
+    <title>Animação 3D - Carrinho</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background-color: #0b0b16;
             color: #ffffff;
@@ -18,101 +14,84 @@
             height: 100vh;
         }
         .ui-container {
-            position: absolute;
-            top: 40px;
-            width: 100%;
-            text-align: center;
-            z-index: 10;
-            pointer-events: none;
+            position: absolute; top: 40px; width: 100%;
+            text-align: center; z-index: 10; pointer-events: none;
         }
         h1 {
-            font-size: 26px;
-            color: #00f2fe;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+            font-size: 26px; color: #00f2fe; text-transform: uppercase;
+            letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,242,254,.5);
             margin-bottom: 5px;
         }
-        p {
-            color: #8888a0;
-            font-size: 14px;
-        }
+        p { color: #8888a0; font-size: 14px; }
         #status-monitor {
-            position: absolute;
-            top: 110px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 13px;
-            color: #ffb703;
-            border: 1px solid rgba(255, 183, 3, 0.3);
+            position: absolute; top: 110px; left: 50%;
+            transform: translateX(-50%); z-index: 20;
+            background: rgba(0,0,0,.8); padding: 10px 20px;
+            border-radius: 20px; font-size: 13px; color: #ffb703;
+            border: 1px solid rgba(255,183,3,.3); max-width: 90vw; text-align: center;
         }
         .btn-restart {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
+            position: absolute; bottom: 40px; left: 50%;
+            transform: translateX(-50%); z-index: 10;
             background: linear-gradient(45deg, #00f2fe, #4facfe);
-            color: #0b0b16;
-            border: none;
-            padding: 12px 30px;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 5px 20px rgba(0, 242, 254, 0.4);
-            transition: all 0.3s ease;
+            color: #0b0b16; border: none; padding: 12px 30px;
+            font-size: 14px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 1px; border-radius: 30px; cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,242,254,.4); transition: all .3s ease;
         }
         .btn-restart:hover {
             transform: translateX(-50%) translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.6);
+            box-shadow: 0 8px 25px rgba(0,242,254,.6);
         }
-        #canvas-container {
-            width: 100%;
-            height: 100vh;
-        }
+        #canvas-container { width: 100%; height: 100vh; }
     </style>
 </head>
 <body>
 
     <div class="ui-container">
         <h1>Three.js - Carrinho de Compras</h1>
-        <p>Renderização com Módulos Corrigidos</p>
+        <p>Arraste para orbitar • Scroll para zoom</p>
     </div>
 
-    <div id="status-monitor">🔄 Inicializando o ambiente tridimensional...</div>
-
+    <div id="status-monitor">🔄 Carregando...</div>
     <button class="btn-restart" id="restartBtn">Reiniciar Entrada</button>
-
     <div id="canvas-container"></div>
 
-    <!-- Import Map Seguro: Mapeia as dependências diretamente sem redirecionamentos complexos -->
+    <!-- CDN com versão FIXA (evita erros de pasta local) -->
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://jsdelivr.net",
-                "three/addons/": "https://jsdelivr.net"
-            }
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
+    }
     </script>
 
     <script type="module">
         import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';       // ✅ "loaders/"
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        let scene, camera, renderer, shoppingCart;
-        let targetX = 0; 
+        let scene, camera, renderer, controls, shoppingCart;
         let isEntering = false;
 
-        // Estrutura de pastas do seu repositório
-        const modelPath = 'shopping-trolley2/source/Trolly 125.glb';
+        const TARGET_X = 0;
+        const START_X  = -9;
+        const GROUND_Y = -1;
+        const clock = new THREE.Clock();
+
+        // ✅ encodeURI resolve o espaço em "Trolly 125.glb"
+        // DICA: renomeie o arquivo para trolly-125.glb e atualize aqui.
+        const modelPath = encodeURI('./shopping-trolley2/source/Trolly 125.glb');
+
         const statusMonitor = document.getElementById('status-monitor');
+
+        function setStatus(msg, ok = null) {
+            statusMonitor.textContent = msg;
+            const color = ok === true ? '#00f2fe' : ok === false ? '#ff4757' : '#ffb703';
+            statusMonitor.style.color = color;
+            statusMonitor.style.borderColor = color + '66';
+        }
 
         function init() {
             const container = document.getElementById('canvas-container');
@@ -120,107 +99,130 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 4, 8); 
-            camera.lookAt(0, 0, 0);
+            camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+            camera.position.set(0, 3.5, 8);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); // ✅ limita p/ performance
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Ajuste completo de luzes para materiais metálicos PBR do modelo real
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-            scene.add(ambientLight);
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.target.set(0, 0, 0);
+            controls.maxPolarAngle = Math.PI / 2;
 
-            const dirLight1 = new THREE.DirectionLight(0xffffff, 1.5);
-            dirLight1.position.set(5, 10, 7);
-            scene.add(dirLight1);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
 
-            const dirLight2 = new THREE.DirectionLight(0x00f2fe, 1.2);
-            dirLight2.position.set(-5, 5, -5);
-            scene.add(dirLight2);
+            const dir1 = new THREE.DirectionalLight(0xffffff, 1.5);
+            dir1.position.set(5, 10, 7);
+            dir1.castShadow = true;
+            scene.add(dir1);
 
-            const gridHelper = new THREE.GridHelper(30, 30, 0x00f2fe, 0x222244);
-            gridHelper.position.y = -1;
-            scene.add(gridHelper);
+            const dir2 = new THREE.DirectionalLight(0x00f2fe, 1.2);
+            dir2.position.set(-5, 5, -5);
+            scene.add(dir2);
 
-            // Carregador assíncrono oficial
-            const loader = new GLTFLoader();
-            statusMonitor.textContent = "⏳ Conectando ao arquivo 'Trolly 125.glb'...";
-            
-            loader.load(
-                modelPath, 
-                function (gltf) {
-                    shoppingCart = gltf.scene;
+            const grid = new THREE.GridHelper(30, 30, 0x00f2fe, 0x222244);
+            grid.position.y = GROUND_Y + 0.01;
+            scene.add(grid);
 
-                    // Ajuste de proporção para o tamanho ideal de tela
-                    shoppingCart.scale.set(1.5, 1.5, 1.5); 
-                    shoppingCart.rotation.y = Math.PI / 2; 
-                    shoppingCart.position.set(-10, -1, 0); 
-                    
+            // Chão invisível só para receber sombra
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(30, 30),
+                new THREE.ShadowMaterial({ opacity: 0.35 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = GROUND_Y;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            carregarModelo();
+
+            addEventListener('resize', onWindowResize);
+            document.getElementById('restartBtn').addEventListener('click', resetAnimation);
+            animate();
+        }
+
+        function carregarModelo() {
+            setStatus('⏳ Carregando Trolly 125.glb...');
+            new GLTFLoader().load(
+                modelPath,
+                (gltf) => {
+                    shoppingCart = prepararModelo(gltf.scene);
                     scene.add(shoppingCart);
-                    
-                    statusMonitor.style.color = "#00f2fe";
-                    statusMonitor.style.borderColor = "rgba(0, 242, 254, 0.4)";
-                    statusMonitor.textContent = "✅ Modelo carregado com sucesso!";
-                    
+                    setStatus('✅ Modelo carregado com sucesso!', true);
                     isEntering = true;
                 },
-                function (xhr) {
+                (xhr) => {
                     if (xhr.total > 0) {
-                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                        statusMonitor.textContent = `⏳ Carregando elementos 3D: ${percent}%`;
+                        setStatus(`⏳ Lendo geometrias: ${Math.round(xhr.loaded / xhr.total * 100)}%`);
                     }
                 },
-                function (error) {
-                    console.error(error);
-                    statusMonitor.style.color = "#ff4757";
-                    statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
-                    statusMonitor.textContent = "❌ Erro: Verifique se a pasta ou o nome do arquivo mudou.";
+                (error) => {
+                    console.error('Erro ao carregar:', error);
+                    setStatus(`❌ Não encontrei o modelo em: ${modelPath}. Verifique a pasta e o nome do arquivo.`, false);
                 }
             );
+        }
 
-            window.addEventListener('resize', onWindowResize, false);
-            document.getElementById('restartBtn').addEventListener('click', resetAnimation);
-            
-            animate();
+        // ✅ Mede o modelo e ajusta escala/posição automaticamente
+        function prepararModelo(modelo) {
+            modelo.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+
+            const box    = new THREE.Box3().setFromObject(modelo);
+            const size   = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const scale  = 3 / (Math.max(size.x, size.y, size.z) || 1); // cabe em 3 unidades
+
+            modelo.scale.setScalar(scale);
+            modelo.position.set(-center.x * scale, -box.min.y * scale, -center.z * scale); // base no chão
+
+            const grupo = new THREE.Group();
+            grupo.add(modelo);
+            grupo.position.set(START_X, GROUND_Y, 0);
+            grupo.rotation.y = Math.PI / 2;
+            return grupo;
         }
 
         function animate() {
             requestAnimationFrame(animate);
+            const delta = clock.getDelta();
 
-            if (shoppingCart && isEntering) {
-                // Efeito deslizante linear em direção ao centro (X = 0)
-                shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
-                
-                if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
-                    shoppingCart.position.x = targetX;
-                    isEntering = false;
+            if (shoppingCart) {
+                if (isEntering) {
+                    // Damp = movimento suave independente do FPS
+                    shoppingCart.position.x = THREE.MathUtils.damp(shoppingCart.position.x, TARGET_X, 3, delta);
+                    if (Math.abs(shoppingCart.position.x - TARGET_X) < 0.01) {
+                        shoppingCart.position.x = TARGET_X;
+                        isEntering = false;
+                    }
+                } else {
+                    shoppingCart.rotation.y += 0.4 * delta; // rad/s, sem depender do FPS
                 }
-            } else if (shoppingCart) {
-                // Rotação suave contínua quando chega no meio
-                shoppingCart.rotation.y += 0.008;
             }
 
+            controls.update();
             renderer.render(scene, camera);
         }
 
         function resetAnimation() {
-            if (shoppingCart) {
-                isEntering = true;
-                shoppingCart.rotation.y = Math.PI / 2; 
-                shoppingCart.position.set(-10, -1, 0); 
-            }
+            if (!shoppingCart) { setStatus('⚠️ O modelo ainda não carregou.'); return; }
+            shoppingCart.rotation.y = Math.PI / 2;
+            shoppingCart.position.set(START_X, GROUND_Y, 0);
+            isEntering = true;
         }
 
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.aspect = innerWidth / innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(innerWidth, innerHeight);
         }
 
-        window.addEventListener('load', init);
+        init(); // ✅ módulo já é "deferred"; não precisa esperar o evento load
     </script>
 </body>
 </html>
