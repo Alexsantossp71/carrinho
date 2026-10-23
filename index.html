@@ -1,1 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Portfólio</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e2f, #252542);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid #00f2fe;
+            margin-bottom: 20px;
+            object-fit: cover;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #00f2fe;
+        }
+        p {
+            font-size: 16px;
+            color: #b3b3b3;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .btn {
+            text-decoration: none;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        .btn:hover {
+            background: #00f2fe;
+            color: #1e1e2f;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- Você pode substituir por uma foto sua hospedada ou no seu repositório -->
+        <img class="profile-img" src="https://picsum.photos" alt="Foto de Perfil">
+        
+        <h1>Seu Nome Aqui</h1>
+        <p>Desenvolvedor em início de carreira focado em criar soluções web e aprender novas tecnologias diariamente.</p>
+        
+        <div class="links">
+            <a href="https://github.com" target="_blank" class="btn">Meu GitHub</a>
+            <a href="https://linkedin.com" target="_blank" class="btn">LinkedIn</a>
+            <a href="mailto:seu-email@email.com" class="btn">Contato por E-mail</a>
+        </div>
+    </div>
+
+</body>
+</html>
+
 
