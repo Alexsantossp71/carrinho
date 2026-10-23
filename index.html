@@ -3,247 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animação de Carrinho de Compras</title>
+    <title>Animação 3D - Carrinho Three.js</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e1e2f, #252542);
+            background-color: #0b0b16;
             color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            overflow-x: hidden;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            height: 100vh;
         }
-
-        h1 {
-            margin-bottom: 10px;
-            color: #00f2fe;
-        }
-
-        p.instrucao {
-            color: #b3b3b3;
-            margin-bottom: 40px;
-        }
-
-        /* Topo fixo com o Carrinho de Compras */
-        .cart-container {
-            position: fixed;
-            top: 20px;
-            right: 40px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 15px 25px;
-            border-radius: 50px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 100;
-        }
-
-        .cart-icon {
-            font-size: 30px;
-            transition: transform 0.2s ease;
-        }
-
-        .cart-count {
-            background-color: #ff4757;
-            color: white;
-            font-weight: bold;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 16px;
-        }
-
-        /* Efeito de Tremor (Shake) no carrinho quando o item cai dentro */
-        .shake {
-            animation: shakeCart 0.4s ease-in-out;
-        }
-
-        @keyframes shakeCart {
-            0% { transform: scale(1); }
-            25% { transform: scale(1.1) rotate(-10deg); }
-            50% { transform: scale(1.1) rotate(10deg); }
-            75% { transform: scale(1.1) rotate(-5deg); }
-            100% { transform: scale(1); }
-        }
-
-        /* Grade de Produtos */
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 30px;
+        /* Título discreto por cima do 3D */
+        .ui-container {
+            position: absolute;
+            top: 40px;
             width: 100%;
-            max-width: 1000px;
-            margin-top: 40px;
-        }
-
-        .product-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
             text-align: center;
-            position: relative;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .product-img {
-            width: 120px;
-            height: 120px;
-            object-fit: contain;
-            margin-bottom: 15px;
-            background: #fff;
-            border-radius: 10px;
-            padding: 5px;
-        }
-
-        .product-title {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-
-        .product-price {
-            color: #00f2fe;
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .add-to-cart-btn {
-            background: #00f2fe;
-            color: #1e1e2f;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-        }
-
-        .add-to-cart-btn:hover {
-            background: #00c7d4;
-        }
-
-        /* Elemento Fantasma Animado (O produto que vai voar/cair) */
-        .flying-item {
-            position: fixed;
-            z-index: 9999;
+            z-index: 10;
             pointer-events: none;
-            object-fit: contain;
-            background: #fff;
-            border-radius: 10px;
-            padding: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        h1 {
+            font-size: 28px;
+            color: #00f2fe;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+            margin-bottom: 5px;
+        }
+        p {
+            color: #8888a0;
+            font-size: 14px;
+        }
+        /* Botão para reiniciar a animação */
+        .btn-restart {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            color: #0b0b16;
+            border: none;
+            padding: 12px 30px;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 242, 254, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-restart:hover {
+            transform: translateX(-50%) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.6);
+        }
+        /* Container onde o Three.js vai desenhar */
+        #canvas-container {
+            width: 100%;
+            height: 100vh;
         }
     </style>
 </head>
 <body>
 
-    <!-- Ícone do Carrinho Fixo no Canto -->
-    <div class="cart-container" id="cartContainer">
-        <div class="cart-icon" id="cartIcon">🛒</div>
-        <div class="cart-count" id="cartCount">0</div>
+    <div class="ui-container">
+        <h1>Three.js Animation</h1>
+        <p>O carrinho desliza para o centro e ativa a rotação de exibição</p>
     </div>
 
-    <h1>Nossa Loja de Variedades</h1>
-    <p class="instrucao">Clique em "Adicionar" para ver o produto voar e cair no carrinho!</p>
+    <button class="btn-restart" onclick="resetAnimation()">Reiniciar Entrada</button>
 
-    <!-- Vitrine de Produtos -->
-    <div class="products-grid">
-        
-        <!-- Produto 1 -->
-        <div class="product-card">
-            <img src="https://flaticon.com" class="product-img" alt="Notebook">
-            <div class="product-title">Notebook Gamer</div>
-            <div class="product-price">R$ 4.599,00</div>
-            <button class="add-to-cart-btn" onclick="animateToCart(this)">Adicionar</button>
-        </div>
+    <div id="canvas-container"></div>
 
-        <!-- Produto 2 -->
-        <div class="product-card">
-            <img src="https://flaticon.com" class="product-img" alt="Smartphone">
-            <div class="product-title">Smartphone 5G</div>
-            <div class="product-price">R$ 2.499,00</div>
-            <button class="add-to-cart-btn" onclick="animateToCart(this)">Adicionar</button>
-        </div>
-
-        <!-- Produto 3 -->
-        <div class="product-card">
-            <img src="https://flaticon.com" class="product-img" alt="Fone de Ouvido">
-            <div class="product-title">Fone Bluetooth</div>
-            <div class="product-price">R$ 349,00</div>
-            <button class="add-to-cart-btn" onclick="animateToCart(this)">Adicionar</button>
-        </div>
-
-    </div>
+    <!-- Importando o Three.js via CDN oficial -->
+    <script src="https://cloudflare.com"></script>
 
     <script>
-        let itemCount = 0;
+        let scene, camera, renderer, shoppingCart;
+        let targetX = 0; // Posição central de parada
+        let isEntering = true;
 
-        function animateToCart(button) {
-            // 1. Encontra a imagem do produto correspondente ao botão clicado
-            const productCard = button.closest('.product-card');
-            const productImg = productCard.querySelector('.product-img');
-            const cartContainer = document.getElementById('cartContainer');
-            const cartCount = document.getElementById('cartCount');
+        function init() {
+            const container = document.getElementById('canvas-container');
 
-            // 2. Descobre as posições exatas na tela (Imagem e Carrinho de destino)
-            const imgRect = productImg.getBoundingClientRect();
-            const cartRect = cartContainer.getBoundingClientRect();
+            // 1. Criando a Cena
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b0b16);
 
-            // 3. Cria uma cópia (clone) da imagem para fazer a animação de voo
-            const clone = productImg.cloneNode(true);
-            clone.classList.add('flying-item');
+            // 2. Criando a Câmera
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 3, 7);
+            camera.lookAt(0, 0, 0);
+
+            // 3. Criando o Renderizador
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // 4. Iluminação do Cenário
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionLight(0x00f2fe, 1.5);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            const pointLight = new THREE.PointLight(0xff00ff, 1, 10);
+            pointLight.position.set(-3, 2, 2);
+            scene.add(pointLight);
+
+            // 5. Construindo o Carrinho de Compras em 3D (Grupo de malhas)
+            shoppingCart = new THREE.Group();
+
+            // Material Aramado de Metal Neon
+            const metalMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff, 
+                wireframe: true,
+                roughness: 0.2,
+                metalness: 0.8
+            });
+            // Material das Rodas e Plásticos
+            const blackMaterial = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.5 });
+
+            // Cesto do Carrinho (Cubo aramado)
+            const basketGeo = new THREE.BoxGeometry(2, 1.2, 1.4);
+            const basket = new THREE.Mesh(basketGeo, metalMaterial);
+            basket.position.y = 0.6;
+            shoppingCart.add(basket);
+
+            // Grade Inferior / Chassi
+            const baseGeo = new THREE.BoxGeometry(2, 0.1, 1.2);
+            const base = new THREE.Mesh(baseGeo, metalMaterial);
+            base.position.y = -0.1;
+            shoppingCart.add(base);
+
+            // Hastes de suporte do cesto
+            const barGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.7);
+            const bar1 = new THREE.Mesh(barGeo, blackMaterial);
+            bar1.position.set(0.7, 0.2, 0.5);
+            const bar2 = bar1.clone(); bar2.position.set(-0.7, 0.2, 0.5);
+            const bar3 = bar1.clone(); bar3.position.set(0.7, 0.2, -0.5);
+            const bar4 = bar1.clone(); bar4.position.set(-0.7, 0.2, -0.5);
+            shoppingCart.add(bar1, bar2, bar3, bar4);
+
+            // Rodas (4 cilindros deitados)
+            const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.2, 16);
+            wheelGeo.rotateZ(Math.PI / 2); // Deita o cilindro no formato de roda
+
+            const wheel1 = new THREE.Mesh(wheelGeo, blackMaterial);
+            wheel1.position.set(0.7, -0.35, 0.5);
+            const wheel2 = wheel1.clone(); wheel2.position.set(-0.7, -0.35, 0.5);
+            const wheel3 = wheel1.clone(); wheel3.position.set(0.7, -0.35, -0.5);
+            const wheel4 = wheel1.clone(); wheel4.position.set(-0.7, -0.35, -0.5);
+            shoppingCart.add(wheel1, wheel2, wheel3, wheel4);
+
+            // Barra para empurrar (Alça)
+            const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4);
+            handleGeo.rotateX(Math.PI / 2);
+            const handle = new THREE.Mesh(handleGeo, blackMaterial);
+            handle.position.set(-1.05, 1.1, 0);
+            shoppingCart.add(handle);
+
+            // Posição Inicial de Entrada (Fora da tela, bem à esquerda)
+            shoppingCart.position.set(-8, 0, 0);
+            scene.add(shoppingCart);
+
+            // Chão Grid para dar profundidade espacial
+            const gridHelper = new THREE.GridHelper(30, 30, 0x00f2fe, 0x222244);
+            gridHelper.position.y = -0.5;
+            scene.add(gridHelper);
+
+            // Ajuste automático de tamanho de tela
+            window.addEventListener('resize', onWindowResize, false);
             
-            // Define o tamanho e posição inicial do clone exatamente em cima da foto original
-            clone.style.width = imgRect.width + 'px';
-            clone.style.height = imgRect.height + 'px';
-            clone.style.top = imgRect.top + 'px';
-            clone.style.left = imgRect.left + 'px';
-
-            document.body.appendChild(clone);
-
-            // 4. Dispara o movimento em direção ao carrinho usando um pequeno delay (setTimeout)
-            setTimeout(() => {
-                clone.style.top = (cartRect.top + 10) + 'px';
-                clone.style.left = (cartRect.left + 10) + 'px';
-                clone.style.width = '20px'; // Encolhe o produto enquanto ele cai no carrinho
-                clone.style.height = '20px';
-                clone.style.opacity = '0.2';
-                clone.style.transform = 'rotate(360deg)'; // Faz o produto girar enquanto cai
-            }, 50);
-
-            // 5. Quando a animação de voo termina (800ms)
-            setTimeout(() => {
-                // Remove o clone da tela
-                clone.remove();
-
-                // Atualiza o contador de itens
-                itemCount++;
-                cartCount.textContent = itemCount;
-
-                // Adiciona a classe de tremor no carrinho
-                cartContainer.classList.add('shake');
-                
-                // Remove a classe de tremor após a animação acabar para poder tremer de novo no próximo clique
-                setTimeout(() => {
-                    cartContainer.classList.remove('shake');
-                }, 400);
-
-            }, 850);
+            animate();
         }
+
+        // Loop de Animação Principal
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Logica de movimentação suave (Lerp) para a entrada do carrinho
+            if (isEntering) {
+                // Diminui a distância entre a posição atual e o centro aos poucos (suavização)
+                shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.05;
+                
+                // Rotaciona ligeiramente as rodas simulando o movimento de entrada
+                shoppingCart.children.forEach(child => {
+                    if(child.geometry.type === "CylinderGeometry" && child.position.y < 0) {
+                        child.rotation.z -= 0.15;
+                    }
+                });
+
+                // Se estiver bem perto do centro, encerra a entrada direta
+                if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
+                    shoppingCart.position.x = targetX;
+                    isEntering = false;
+                }
+            } else {
+                // Efeito "Showroom": Quando para no meio, o carrinho fica girando devagar para exibição
+                shoppingCart.rotation.y += 0.01;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Função para Resetar a Animação no clique do botão
+        function resetAnimation() {
+            isEntering = true;
+            shoppingCart.rotation.y = 0; // Reseta rotação de exibição
+            shoppingCart.position.set(-8, 0, 0); // Volta para fora da tela
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Inicializa o script 3D assim que a página carregar
+        window.onload = init;
     </script>
 </body>
 </html>
