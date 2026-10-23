@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animação 3D - Carrinho de Compras 2 </title>
+    <title>Animação 3D - Carrinho de Compras</title>
     <style>
         * {
             box-sizing: border-box;
@@ -82,27 +82,26 @@
 <body>
 
     <div class="ui-container">
-        <h1>Three.js - Carrinho de Compras 2 </h1>
-        <p>Arquitetura Padrão ES6 Modules</p>
+        <h1>Three.js - Carrinho de Compras</h1>
+        <p>Renderização com Módulos Corrigidos</p>
     </div>
 
-    <div id="status-monitor">🔄 Mapeando dependências do motor 3D...</div>
+    <div id="status-monitor">🔄 Inicializando o ambiente tridimensional...</div>
 
     <button class="btn-restart" id="restartBtn">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- Mapeamento Oficial: Ensina o navegador a resolver os escopos tridimensionais sem conflitos -->
+    <!-- Import Map Seguro: Mapeia as dependências diretamente sem redirecionamentos complexos -->
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com",
-                "three/addons/": "https://unpkg.com"
+                "three": "https://jsdelivr.net",
+                "three/addons/": "https://jsdelivr.net"
             }
         }
     </script>
 
-    <!-- Bloco de Execução Isolado -->
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -111,13 +110,13 @@
         let targetX = 0; 
         let isEntering = false;
 
+        // Estrutura de pastas do seu repositório
         const modelPath = 'shopping-trolley2/source/Trolly 125.glb';
         const statusMonitor = document.getElementById('status-monitor');
 
         function init() {
             const container = document.getElementById('canvas-container');
 
-            // Inicializando a Cena de forma isolada
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
@@ -130,7 +129,7 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Luz Ambiente e Direcionais para materiais PBR (metálicos)
+            // Ajuste completo de luzes para materiais metálicos PBR do modelo real
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
@@ -146,16 +145,16 @@
             gridHelper.position.y = -1;
             scene.add(gridHelper);
 
-            // Carregamento Seguro usando o Loader Modular verificado da documentação
+            // Carregador assíncrono oficial
             const loader = new GLTFLoader();
-            statusMonitor.textContent = "⏳ Localizando arquivo 'Trolly 125.glb'...";
+            statusMonitor.textContent = "⏳ Conectando ao arquivo 'Trolly 125.glb'...";
             
             loader.load(
                 modelPath, 
                 function (gltf) {
                     shoppingCart = gltf.scene;
 
-                    // Ajustes de Proporção
+                    // Ajuste de proporção para o tamanho ideal de tela
                     shoppingCart.scale.set(1.5, 1.5, 1.5); 
                     shoppingCart.rotation.y = Math.PI / 2; 
                     shoppingCart.position.set(-10, -1, 0); 
@@ -164,21 +163,21 @@
                     
                     statusMonitor.style.color = "#00f2fe";
                     statusMonitor.style.borderColor = "rgba(0, 242, 254, 0.4)";
-                    statusMonitor.textContent = "✅ Pronto! Carrinho renderizado.";
+                    statusMonitor.textContent = "✅ Modelo carregado com sucesso!";
                     
                     isEntering = true;
                 },
                 function (xhr) {
                     if (xhr.total > 0) {
                         const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                        statusMonitor.textContent = `⏳ Buscando texturas: ${percent}%`;
+                        statusMonitor.textContent = `⏳ Carregando elementos 3D: ${percent}%`;
                     }
                 },
                 function (error) {
                     console.error(error);
                     statusMonitor.style.color = "#ff4757";
                     statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
-                    statusMonitor.textContent = "❌ Erro 404: Verifique o nome da pasta e do arquivo .glb.";
+                    statusMonitor.textContent = "❌ Erro: Verifique se a pasta ou o nome do arquivo mudou.";
                 }
             );
 
@@ -192,7 +191,7 @@
             requestAnimationFrame(animate);
 
             if (shoppingCart && isEntering) {
-                // Entrada linear suave (Lerp)
+                // Efeito deslizante linear em direção ao centro (X = 0)
                 shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
                 
                 if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
@@ -200,7 +199,7 @@
                     isEntering = false;
                 }
             } else if (shoppingCart) {
-                // Rotação contínua após atingir o centro
+                // Rotação suave contínua quando chega no meio
                 shoppingCart.rotation.y += 0.008;
             }
 
