@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animação 3D - Carrinho Three.js</title>
+    <title>Animação 3D - Carrinho Realista</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,7 +17,6 @@
             overflow: hidden;
             height: 100vh;
         }
-        /* Título discreto por cima do 3D */
         .ui-container {
             position: absolute;
             top: 40px;
@@ -38,7 +37,6 @@
             color: #8888a0;
             font-size: 14px;
         }
-        /* Botão para reiniciar a animação */
         .btn-restart {
             position: absolute;
             bottom: 40px;
@@ -62,7 +60,6 @@
             transform: translateX(-50%) translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 242, 254, 0.6);
         }
-        /* Container onde o Three.js vai desenhar */
         #canvas-container {
             width: 100%;
             height: 100vh;
@@ -72,154 +69,117 @@
 <body>
 
     <div class="ui-container">
-        <h1>Three.js Animation</h1>
-        <p>O carrinho desliza para o centro e ativa a rotação de exibição</p>
+        <h1>Three.js - Modelo GLB</h1>
+        <p>Carregando o carrinho real do arquivo Trolly 125.glb</p>
     </div>
 
     <button class="btn-restart" onclick="resetAnimation()">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- Importando o Three.js via CDN oficial -->
+    <!-- Scripts do Three.js e do Carregador GLTF/GLB -->
     <script src="https://cloudflare.com"></script>
+    <script src="https://jsdelivr.net"></script>
 
     <script>
         let scene, camera, renderer, shoppingCart;
-        let targetX = 0; // Posição central de parada
-        let isEntering = true;
+        let targetX = 0; 
+        let isEntering = false; // Só ativa a movimentação quando o modelo terminar de carregar
+
+        // Caminho exato apontando para o seu arquivo enviado
+        const modelPath = './shopping-trolley2/source/Trolly 125.glb';
 
         function init() {
             const container = document.getElementById('canvas-container');
 
-            // 1. Criando a Cena
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
-            // 2. Criando a Câmera
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 3, 7);
+            camera.position.set(0, 4, 8); // Subi um pouco a câmera para enquadrar melhor o modelo real
             camera.lookAt(0, 0, 0);
 
-            // 3. Criando o Renderizador
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // 4. Iluminação do Cenário
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            // Iluminação reforçada para destacar texturas e metais realistas do GLB
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionLight(0x00f2fe, 1.5);
-            dirLight.position.set(5, 10, 7);
-            scene.add(dirLight);
+            const dirLight1 = new THREE.DirectionLight(0xffffff, 1.5);
+            dirLight1.position.set(5, 10, 7);
+            scene.add(dirLight1);
 
-            const pointLight = new THREE.PointLight(0xff00ff, 1, 10);
-            pointLight.position.set(-3, 2, 2);
-            scene.add(pointLight);
+            const dirLight2 = new THREE.DirectionLight(0x00f2fe, 1.0);
+            dirLight2.position.set(-5, 5, -5);
+            scene.add(dirLight2);
 
-            // 5. Construindo o Carrinho de Compras em 3D (Grupo de malhas)
-            shoppingCart = new THREE.Group();
-
-            // Material Aramado de Metal Neon
-            const metalMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xffffff, 
-                wireframe: true,
-                roughness: 0.2,
-                metalness: 0.8
-            });
-            // Material das Rodas e Plásticos
-            const blackMaterial = new THREE.MeshStandardMaterial({ color: 0x222233, roughness: 0.5 });
-
-            // Cesto do Carrinho (Cubo aramado)
-            const basketGeo = new THREE.BoxGeometry(2, 1.2, 1.4);
-            const basket = new THREE.Mesh(basketGeo, metalMaterial);
-            basket.position.y = 0.6;
-            shoppingCart.add(basket);
-
-            // Grade Inferior / Chassi
-            const baseGeo = new THREE.BoxGeometry(2, 0.1, 1.2);
-            const base = new THREE.Mesh(baseGeo, metalMaterial);
-            base.position.y = -0.1;
-            shoppingCart.add(base);
-
-            // Hastes de suporte do cesto
-            const barGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.7);
-            const bar1 = new THREE.Mesh(barGeo, blackMaterial);
-            bar1.position.set(0.7, 0.2, 0.5);
-            const bar2 = bar1.clone(); bar2.position.set(-0.7, 0.2, 0.5);
-            const bar3 = bar1.clone(); bar3.position.set(0.7, 0.2, -0.5);
-            const bar4 = bar1.clone(); bar4.position.set(-0.7, 0.2, -0.5);
-            shoppingCart.add(bar1, bar2, bar3, bar4);
-
-            // Rodas (4 cilindros deitados)
-            const wheelGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.2, 16);
-            wheelGeo.rotateZ(Math.PI / 2); // Deita o cilindro no formato de roda
-
-            const wheel1 = new THREE.Mesh(wheelGeo, blackMaterial);
-            wheel1.position.set(0.7, -0.35, 0.5);
-            const wheel2 = wheel1.clone(); wheel2.position.set(-0.7, -0.35, 0.5);
-            const wheel3 = wheel1.clone(); wheel3.position.set(0.7, -0.35, -0.5);
-            const wheel4 = wheel1.clone(); wheel4.position.set(-0.7, -0.35, -0.5);
-            shoppingCart.add(wheel1, wheel2, wheel3, wheel4);
-
-            // Barra para empurrar (Alça)
-            const handleGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4);
-            handleGeo.rotateX(Math.PI / 2);
-            const handle = new THREE.Mesh(handleGeo, blackMaterial);
-            handle.position.set(-1.05, 1.1, 0);
-            shoppingCart.add(handle);
-
-            // Posição Inicial de Entrada (Fora da tela, bem à esquerda)
-            shoppingCart.position.set(-8, 0, 0);
-            scene.add(shoppingCart);
-
-            // Chão Grid para dar profundidade espacial
+            // Adiciona o grid no chão para dar noção de espaço tridimensional
             const gridHelper = new THREE.GridHelper(30, 30, 0x00f2fe, 0x222244);
-            gridHelper.position.y = -0.5;
+            gridHelper.position.y = -1;
             scene.add(gridHelper);
 
-            // Ajuste automático de tamanho de tela
+            // CARREGANDO O SEU MODELO 3D REAL (.GLB)
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                modelPath, 
+                function (gltf) {
+                    shoppingCart = gltf.scene;
+
+                    // Ajuste de escala (Modelos da internet às vezes vêm muito grandes ou muito pequenos)
+                    // Se o carrinho sumir ou ficar gigante, mexa nesses valores abaixo:
+                    shoppingCart.scale.set(1.5, 1.5, 1.5); 
+
+                    // Define a rotação inicial para ele entrar "de frente" ou de lado conforme o eixo original
+                    shoppingCart.rotation.y = Math.PI / 2; 
+
+                    // Coloca o carrinho escondido na esquerda (fora da tela) para começar o slide
+                    shoppingCart.position.set(-10, -1, 0); 
+                    
+                    scene.add(shoppingCart);
+                    
+                    // Libera a animação agora que o modelo está carregado na memória
+                    isEntering = true;
+                },
+                undefined,
+                function (error) {
+                    console.error('Erro ao carregar o modelo 3D do carrinho:', error);
+                }
+            );
+
             window.addEventListener('resize', onWindowResize, false);
-            
             animate();
         }
 
-        // Loop de Animação Principal
         function animate() {
             requestAnimationFrame(animate);
 
-            // Logica de movimentação suave (Lerp) para a entrada do carrinho
-            if (isEntering) {
-                // Diminui a distância entre a posição atual e o centro aos poucos (suavização)
-                shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.05;
+            // Se o carrinho já foi carregado e está no estágio de entrada
+            if (shoppingCart && isEntering) {
+                // Interpolação suave em direção ao centro (X = 0)
+                shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
                 
-                // Rotaciona ligeiramente as rodas simulando o movimento de entrada
-                shoppingCart.children.forEach(child => {
-                    if(child.geometry.type === "CylinderGeometry" && child.position.y < 0) {
-                        child.rotation.z -= 0.15;
-                    }
-                });
-
-                // Se estiver bem perto do centro, encerra a entrada direta
+                // Se chegou bem perto do centro, para de andar e começa o giro de vitrine
                 if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
                     shoppingCart.position.x = targetX;
                     isEntering = false;
                 }
-            } else {
-                // Efeito "Showroom": Quando para no meio, o carrinho fica girando devagar para exibição
-                shoppingCart.rotation.y += 0.01;
+            } else if (shoppingCart) {
+                // Rotação suave contínua no centro da tela
+                shoppingCart.rotation.y += 0.008;
             }
 
             renderer.render(scene, camera);
         }
 
-        // Função para Resetar a Animação no clique do botão
         function resetAnimation() {
-            isEntering = true;
-            shoppingCart.rotation.y = 0; // Reseta rotação de exibição
-            shoppingCart.position.set(-8, 0, 0); // Volta para fora da tela
+            if (shoppingCart) {
+                isEntering = true;
+                shoppingCart.rotation.y = Math.PI / 2; // Reseta rotação para a posição de movimento
+                shoppingCart.position.set(-10, -1, 0); // Joga de volta para fora da tela na esquerda
+            }
         }
 
         function onWindowResize() {
@@ -228,8 +188,8 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Inicializa o script 3D assim que a página carregar
         window.onload = init;
     </script>
 </body>
 </html>
+
