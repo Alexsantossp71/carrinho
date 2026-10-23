@@ -83,39 +83,40 @@
 
     <div class="ui-container">
         <h1>Three.js - Carrinho de Compras</h1>
-        <p>Renderização de Modelo 3D Isolado</p>
+        <p>Renderização usando Módulos Modernos ES6</p>
     </div>
 
-    <div id="status-monitor">🔄 Conectando às bibliotecas de renderização...</div>
+    <div id="status-monitor">🔄 Inicializando módulos 3D seguros...</div>
 
-    <button class="btn-restart" onclick="resetAnimation()">Reiniciar Entrada</button>
+    <button class="btn-restart" id="restartBtn">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- CDNJS COMPLETOS: Sem dependência de jsdelivr ou unpkg móveis -->
-    <script src="https://cloudflare.com"></script>
-    <script src="https://jsdelivr.net"></script>
+    <!-- Import Map: Configuração moderna que ensina o navegador a encontrar o Three.js corretamente -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com",
+                "three/addons/": "https://unpkg.com"
+            }
+        }
+    </script>
 
-    <script>
+    <!-- Código principal rodando como MÓDULO (Padrão atual da indústria) -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
         let scene, camera, renderer, shoppingCart;
         let targetX = 0; 
         let isEntering = false;
 
-        // Estrutura de pastas do seu repositório GitHub verificada
         const modelPath = 'shopping-trolley2/source/Trolly 125.glb';
+        const statusMonitor = document.getElementById('status-monitor');
 
         function init() {
             const container = document.getElementById('canvas-container');
-            const statusMonitor = document.getElementById('status-monitor');
 
-            // Validação das dependências injetadas
-            if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
-                statusMonitor.style.color = "#ff4757";
-                statusMonitor.textContent = "❌ Erro nas dependências de script. Limpe o cache.";
-                return;
-            }
-
-            // Inicializando o Cenário Tridimensional
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
@@ -128,7 +129,7 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Setup de iluminação avançada para o metal do carrinho
+            // Iluminação para realçar o modelo
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
@@ -144,8 +145,8 @@
             gridHelper.position.y = -1;
             scene.add(gridHelper);
 
-            // Disparando o carregamento do seu arquivo .glb
-            const loader = new THREE.GLTFLoader();
+            // Inicializando o Carregador Moderno
+            const loader = new GLTFLoader();
             statusMonitor.textContent = "⏳ Carregando arquivo: Trolly 125.glb...";
             
             loader.load(
@@ -153,7 +154,7 @@
                 function (gltf) {
                     shoppingCart = gltf.scene;
 
-                    // Proporções ideais baseadas no enquadramento
+                    // Ajustes de proporção e rotação
                     shoppingCart.scale.set(1.5, 1.5, 1.5); 
                     shoppingCart.rotation.y = Math.PI / 2; 
                     shoppingCart.position.set(-10, -1, 0); 
@@ -176,11 +177,13 @@
                     console.error(error);
                     statusMonitor.style.color = "#ff4757";
                     statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
-                    statusMonitor.textContent = "❌ Erro 404: Arquivo 3D não encontrado na pasta.";
+                    statusMonitor.textContent = "❌ Erro: Arquivo 3D não encontrado no caminho indicado.";
                 }
             );
 
             window.addEventListener('resize', onWindowResize, false);
+            document.getElementById('restartBtn').addEventListener('click', resetAnimation);
+            
             animate();
         }
 
@@ -188,7 +191,6 @@
             requestAnimationFrame(animate);
 
             if (shoppingCart && isEntering) {
-                // Deslocamento controlado em direção ao centro (Eixo X = 0)
                 shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
                 
                 if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
@@ -196,7 +198,6 @@
                     isEntering = false;
                 }
             } else if (shoppingCart) {
-                // Movimento contínuo de rotação pós-chegada
                 shoppingCart.rotation.y += 0.008;
             }
 
@@ -217,7 +218,8 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        window.onload = init;
+        // Inicializa após o carregamento da janela
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
