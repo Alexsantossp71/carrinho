@@ -83,51 +83,54 @@
 
     <div class="ui-container">
         <h1>Three.js - Carrinho de Compras</h1>
-        <p>Modelo carregado via CDN ultrarrápido</p>
+        <p>Modelo carregado via CDN estável</p>
     </div>
 
-    <div id="status-monitor">🔄 Conectando aos servidores 3D estáveis...</div>
+    <div id="status-monitor">🔄 Inicializando ambiente 3D...</div>
 
     <button class="btn-restart" onclick="resetAnimation()">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- SUBSTITUIÇÃO CRÍTICA: Trocado jsdelivr por cdnjs (Cloudflare) para evitar erros de conexão -->
+    <!-- CORREÇÃO FINAL: Scripts clássicos vinculados ao CDNJS oficiais e compatíveis -->
     <script src="https://cloudflare.com"></script>
-    <script src="https://unpkg.com"></script>
+    <script src="https://jsdelivr.net"></script>
 
     <script>
         let scene, camera, renderer, shoppingCart;
         let targetX = 0; 
         let isEntering = false;
 
-        // Caminho do seu arquivo no repositório do GitHub
+        // Caminho relativo exato do arquivo no seu repositório
         const modelPath = 'shopping-trolley2/source/Trolly 125.glb';
 
         function init() {
             const container = document.getElementById('canvas-container');
             const statusMonitor = document.getElementById('status-monitor');
 
-            // Garantia extra de carregamento dos scripts antes de rodar o motor
-            if (typeof THREE === 'undefined') {
+            // Validação de scripts carregados globalmente no navegador
+            if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
                 statusMonitor.style.color = "#ff4757";
-                statusMonitor.textContent = "❌ Falha crítica: Bibliotecas 3D não carregaram. Recarregue a página.";
+                statusMonitor.textContent = "❌ Falha: Os scripts 3D principais falharam. Atualize com CTRL + F5.";
                 return;
             }
 
+            // Criando a cena
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
+            // Criando a câmera
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 4, 8); 
             camera.lookAt(0, 0, 0);
 
+            // Criando o renderizador
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Luzes ambiente e direcionais
+            // Iluminação
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
@@ -139,20 +142,21 @@
             dirLight2.position.set(-5, 5, -5);
             scene.add(dirLight2);
 
+            // Grid espacial
             const gridHelper = new THREE.GridHelper(30, 30, 0x00f2fe, 0x222244);
             gridHelper.position.y = -1;
             scene.add(gridHelper);
 
-            // Carregador de modelos GLTF/GLB
+            // Inicializando o carregador através da nova instância global corrigida
             const loader = new THREE.GLTFLoader();
-            statusMonitor.textContent = "⏳ Baixando modelo 3D do carrinho...";
+            statusMonitor.textContent = "⏳ Baixando arquivo 'Trolly 125.glb'...";
             
             loader.load(
                 modelPath, 
                 function (gltf) {
                     shoppingCart = gltf.scene;
 
-                    // Ajuste padrão de tamanho e rotação inicial do carrinho
+                    // Ajustes de proporção do carrinho real
                     shoppingCart.scale.set(1.5, 1.5, 1.5); 
                     shoppingCart.rotation.y = Math.PI / 2; 
                     shoppingCart.position.set(-10, -1, 0); 
@@ -161,7 +165,7 @@
                     
                     statusMonitor.style.color = "#00f2fe";
                     statusMonitor.style.borderColor = "rgba(0, 242, 254, 0.4)";
-                    statusMonitor.textContent = "✅ Pronto! Carrinho carregado.";
+                    statusMonitor.textContent = "✅ Sucesso! O carrinho está na tela.";
                     
                     isEntering = true;
                 },
@@ -175,7 +179,7 @@
                     console.error(error);
                     statusMonitor.style.color = "#ff4757";
                     statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
-                    statusMonitor.textContent = "❌ Erro: O arquivo 'Trolly 125.glb' não foi achado na pasta.";
+                    statusMonitor.textContent = "❌ Erro: Verifique se o nome do arquivo .glb está idêntico.";
                 }
             );
 
