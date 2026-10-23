@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Animação 3D - Carrinho de Compras</title>
+    <title>Animação 3D - Carrinho Realista</title>
     <style>
         * {
             box-sizing: border-box;
@@ -83,40 +83,39 @@
 
     <div class="ui-container">
         <h1>Three.js - Carrinho de Compras</h1>
-        <p>Renderização usando Módulos Modernos ES6</p>
+        <p>Renderização com Scripts Estáveis Integrados</p>
     </div>
 
-    <div id="status-monitor">🔄 Inicializando módulos 3D seguros...</div>
+    <div id="status-monitor">🔄 Conectando às bibliotecas de renderização...</div>
 
-    <button class="btn-restart" id="restartBtn">Reiniciar Entrada</button>
+    <button class="btn-restart" onclick="resetAnimation()">Reiniciar Entrada</button>
 
     <div id="canvas-container"></div>
 
-    <!-- Import Map: Configuração moderna que ensina o navegador a encontrar o Three.js corretamente -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com",
-                "three/addons/": "https://unpkg.com"
-            }
-        }
-    </script>
+    <!-- Links Oficiais do CDNJS da Cloudflare - Sem bloqueios de CORS -->
+    <script src="https://cloudflare.com"></script>
+    <script src="https://jsdelivr.net"></script>
 
-    <!-- Código principal rodando como MÓDULO (Padrão atual da indústria) -->
-    <script type="module">
-        import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-
+    <script>
         let scene, camera, renderer, shoppingCart;
         let targetX = 0; 
         let isEntering = false;
 
+        // Estrutura de pastas do seu repositório GitHub
         const modelPath = 'shopping-trolley2/source/Trolly 125.glb';
-        const statusMonitor = document.getElementById('status-monitor');
 
         function init() {
             const container = document.getElementById('canvas-container');
+            const statusMonitor = document.getElementById('status-monitor');
 
+            // Validação direta no escopo global
+            if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
+                statusMonitor.style.color = "#ff4757";
+                statusMonitor.textContent = "❌ Erro ao inicializar dependências. Recarregue a página.";
+                return;
+            }
+
+            // Inicializando o Cenário Tridimensional
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0b0b16);
 
@@ -129,7 +128,7 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Iluminação para realçar o modelo
+            // Iluminação para o metal e material do carrinho
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
@@ -145,8 +144,8 @@
             gridHelper.position.y = -1;
             scene.add(gridHelper);
 
-            // Inicializando o Carregador Moderno
-            const loader = new GLTFLoader();
+            // Chamando o carregador do repositório estável
+            const loader = new THREE.GLTFLoader();
             statusMonitor.textContent = "⏳ Carregando arquivo: Trolly 125.glb...";
             
             loader.load(
@@ -154,7 +153,7 @@
                 function (gltf) {
                     shoppingCart = gltf.scene;
 
-                    // Ajustes de proporção e rotação
+                    // Ajustes de proporção e posicionamento
                     shoppingCart.scale.set(1.5, 1.5, 1.5); 
                     shoppingCart.rotation.y = Math.PI / 2; 
                     shoppingCart.position.set(-10, -1, 0); 
@@ -177,13 +176,11 @@
                     console.error(error);
                     statusMonitor.style.color = "#ff4757";
                     statusMonitor.style.borderColor = "rgba(255, 71, 87, 0.4)";
-                    statusMonitor.textContent = "❌ Erro: Arquivo 3D não encontrado no caminho indicado.";
+                    statusMonitor.textContent = "❌ Erro 404: Arquivo 'Trolly 125.glb' não encontrado.";
                 }
             );
 
             window.addEventListener('resize', onWindowResize, false);
-            document.getElementById('restartBtn').addEventListener('click', resetAnimation);
-            
             animate();
         }
 
@@ -191,6 +188,7 @@
             requestAnimationFrame(animate);
 
             if (shoppingCart && isEntering) {
+                // Deslocamento controlado em direção ao centro
                 shoppingCart.position.x += (targetX - shoppingCart.position.x) * 0.04;
                 
                 if (Math.abs(shoppingCart.position.x - targetX) < 0.01) {
@@ -198,6 +196,7 @@
                     isEntering = false;
                 }
             } else if (shoppingCart) {
+                // Rotação contínua após a parada
                 shoppingCart.rotation.y += 0.008;
             }
 
@@ -218,8 +217,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Inicializa após o carregamento da janela
-        window.addEventListener('load', init);
+        window.onload = init;
     </script>
 </body>
 </html>
