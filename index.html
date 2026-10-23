@@ -1,221 +1,134 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrinho Kenney - Cheio</title>
-    <style>
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{background:#0b0b16;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh}
-        .ui-container{position:absolute;top:30px;width:100%;text-align:center;z-index:10;pointer-events:none}
-        h1{font-size:24px;color:#00f2fe;text-transform:uppercase;letter-spacing:2px}
-        #status-monitor{position:absolute;top:90px;left:50%;transform:translateX(-50%);z-index:20;background:rgba(0,0,0,.8);padding:8px 18px;border-radius:20px;font-size:13px;color:#ffb703;border:1px solid rgba(255,183,3,.3)}
-        .btn-restart{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:10;background:linear-gradient(45deg,#00f2fe,#4facfe);color:#0b0b16;border:none;padding:12px 28px;font-weight:bold;border-radius:30px;cursor:pointer}
-        #canvas-container{width:100%;height:100vh}
-    </style>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carrinho Cheio</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0b0b16;color:#fff;font-family:'Segoe UI',sans-serif;overflow:hidden;height:100vh}
+.ui{position:absolute;top:20px;width:100%;text-align:center;z-index:10;pointer-events:none}
+#status{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:20;background:rgba(0,0,0,.8);padding:6px 14px;border-radius:20px;font-size:12px;color:#ffb703;border:1px solid #333}
+#panel{position:absolute;top:110px;left:15px;z-index:20;background:rgba(0,0,0,.75);padding:12px;border-radius:12px;font-size:12px;width:210px}
+#panel label{display:flex;justify-content:space-between;margin:6px 0}
+#panel input{width:90px}
+#canvas{width:100%;height:100vh}
+</style>
 </head>
 <body>
-    <div class="ui-container"><h1>Carrinho Kenney Mini Market</h1><p>Estilo low-poly 100% compatível</p></div>
-    <div id="status-monitor">🔄 Iniciando...</div>
-    <button class="btn-restart" id="restartBtn">Reiniciar</button>
-    <div id="canvas-container"></div>
+<div class="ui"><h1 style="color:#00f2fe;font-size:18px">AJUSTE A CESTA</h1></div>
+<div id="status">🔄 Carregando...</div>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
+<div id="panel">
+  <b>Calibrar cesta [ao vivo]</b>
+  <label>Y altura <input id="sY" type="range" min="0" max="1.5" step="0.01" value="0.72"></label>
+  <label>Z frente <input id="sZ" type="range" min="-0.5" max="0.5" step="0.01" value="0.05"></label>
+  <label>Largura <input id="sW" type="range" min="0.1" max="1.5" step="0.01" value="0.55"></label>
+  <label>Profund. <input id="sD" type="range" min="0.1" max="1.5" step="0.01" value="0.75"></label>
+  <div style="margin-top:8px;color:#888">Ajuste até a caixa verde ficar DENTRO do carrinho. Depois me mande os valores.</div>
+</div>
 
+<div id="canvas"></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let scene, camera, renderer, controls, shoppingCart, grupoProdutos;
-let isEntering = false;
-const clock = new THREE.Clock();
+let scene,camera,renderer,controls,shoppingCart,grupoProdutos,helperCesta;
+const clock=new THREE.Clock();
+const BASE='./kenney-mini-market/Models/glb/';
+const statusEl=document.getElementById('status');
 
-// >>> SE VOCÊ RENOMEOU PARA "glb", troque aqui <<<
-const BASE = './kenney-mini-market/Models/glb/'; 
-// Se renomear para glb use: const BASE = './kenney-mini-market/Models/glb/';
+const CESTA={x:0,y:0.72,z:0.05,largura:0.55,altura:0.35,profundidade:0.75};
 
-const statusMonitor = document.getElementById('status-monitor');
-function setStatus(msg, ok=null){
-    statusMonitor.textContent = msg;
-    const c = ok===true ? '#00f2fe' : ok===false ? '#ff4757' : '#ffb703';
-    statusMonitor.style.color = c; statusMonitor.style.borderColor = c+'66';
-}
+function setStatus(m,ok=null){statusEl.textContent=m; statusEl.style.color=ok===true?'#00f2fe':ok===false?'#ff4757':'#ffb703';}
 
-// CESTA do carrinho KENNEY - ajuste fino
-const CESTA = { x: 0, y: 0.85, z: 0.05, largura: 0.9, altura: 0.5, profundidade: 0.6 };
-const DEBUG_CESTA = false; // coloque true para ver a caixa verde e calibrar
-
-// Produtos que EXISTEM no seu print
-const PRODUTOS_KENNEY = [
-    { arquivo: 'display-fruit.glb', tamanho: 0.45, qtd: 1 }, // vira uma caixa de frutas dentro do carrinho
-    { arquivo: 'display-bread.glb', tamanho: 0.45, qtd: 1 },
-    { arquivo: 'shelf-bags.glb',    tamanho: 0.35, qtd: 2 }, // sacos
-    { arquivo: 'shelf-boxes.glb',   tamanho: 0.35, qtd: 2 },
-    { arquivo: 'shopping-basket.glb', tamanho: 0.4, qtd: 1 },
-];
-
-const loader = new GLTFLoader();
-const cache = new Map();
-
-function corrigirAtlas(root){
-    root.traverse(o=>{
-        if(!o.isMesh) return;
-        const mats = Array.isArray(o.material) ? o.material : [o.material];
-        mats.forEach(m=>{
-            if(!m || !m.map) return;
-            m.map.magFilter = THREE.NearestFilter; // ESSENCIAL pro Kenney não vazar cor
-            m.map.minFilter = THREE.LinearMipmapLinearFilter;
-            m.map.anisotropy = renderer.capabilities.getMaxAnisotropy();
-            m.roughness = 0.85; m.metalness = 0;
-        });
-        o.castShadow = o.receiveShadow = true;
-    });
-}
-
-async function loadKenney(nome){
-    const url = encodeURI(BASE + nome);
-    if(cache.has(url)) return (await cache.get(url)).clone(true);
-    const p = loader.loadAsync(url).then(gltf=>{
-        corrigirAtlas(gltf.scene);
-        return gltf.scene;
-    });
-    cache.set(url, p);
-    const sceneLoaded = await p;
-    return sceneLoaded.clone(true);
-}
-
-function normalizarProduto(obj, alvo){
-    const box = new THREE.Box3().setFromObject(obj);
-    const size = box.getSize(new THREE.Vector3());
-    const escala = alvo / (Math.max(size.x,size.y,size.z) || 1);
-    obj.scale.setScalar(escala);
-    const box2 = new THREE.Box3().setFromObject(obj);
-    const center = box2.getCenter(new THREE.Vector3());
-    obj.position.set(-center.x, -box2.min.y, -center.z);
-    const wrapper = new THREE.Group();
-    wrapper.add(obj);
-    wrapper.userData.altura = box2.max.y - box2.min.y;
-    return wrapper;
-}
-
-function distribuirNaCesta(itens){
-    itens.sort((a,b)=>(b.userData.altura||0)-(a.userData.altura||0));
-    const colunas = 3;
-    const passoX = CESTA.largura / colunas;
-    const passoZ = CESTA.profundidade / Math.ceil(itens.length/colunas);
-    const baseY = -CESTA.altura/2;
-    itens.forEach((item,i)=>{
-        const col = i % colunas;
-        const lin = Math.floor(i/colunas);
-        const x = -CESTA.largura/2 + passoX*(col+0.5) + (Math.random()-0.5)*0.1;
-        const z = -CESTA.profundidade/2 + passoZ*(lin+0.5) + (Math.random()-0.5)*0.1;
-        item.position.set(x+CESTA.x, baseY+CESTA.y+0.05, z+CESTA.z);
-        item.rotation.y = Math.random()*Math.PI*2;
-        item.rotation.x = (Math.random()-0.5)*0.2;
-    });
-}
+const loader=new GLTFLoader();
+const cache=new Map();
+function corrigir(o){o.traverse(m=>{if(!m.isMesh)return;const mats=Array.isArray(m.material)?m.material:[m.material];mats.forEach(mat=>{if(mat?.map){mat.map.magFilter=THREE.NearestFilter;mat.map.minFilter=THREE.LinearMipmapLinearFilter;mat.map.anisotropy=renderer.capabilities.getMaxAnisotropy();}mat.roughness=0.85;mat.metalness=0;});m.castShadow=m.receiveShadow=true;});}
+async function loadKenney(n){const url=BASE+n;if(cache.has(url))return(await cache.get(url)).clone(true);const p=loader.loadAsync(url).then(g=>{corrigir(g.scene);return g.scene;});cache.set(url,p);return(await p).clone(true);}
 
 function init(){
-    const container = document.getElementById('canvas-container');
-    scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b0b16);
-    camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
-    camera.position.set(1.5, 2.5, 3.5);
-    renderer = new THREE.WebGLRenderer({antialias:true});
-    renderer.setSize(innerWidth, innerHeight);
-    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true; controls.target.set(0,0.8,0);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-    const dir = new THREE.DirectionalLight(0xffffff, 2); dir.position.set(5,10,7); dir.castShadow=true; scene.add(dir);
-    const grid = new THREE.GridHelper(10,10,0x00f2fe,0x222244); grid.position.y=0.01; scene.add(grid);
-
-    carregarCarrinho();
-    addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
-    document.getElementById('restartBtn').addEventListener('click', resetAnimation);
-    animate();
+  const cont=document.getElementById('canvas');
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0b0b16);
+  camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,100);camera.position.set(1.2,1.8,2.2);
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.shadowMap.enabled=true;cont.appendChild(renderer.domElement);
+  controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,0.8,0);
+  scene.add(new THREE.AmbientLight(0xffffff,1.2));
+  const d=new THREE.DirectionalLight(0xffffff,2);d.position.set(5,10,7);d.castShadow=true;scene.add(d);
+  const grid=new THREE.GridHelper(10,10,0x00f2fe,0x222244);grid.position.y=0.01;scene.add(grid);
+  carregarCarrinho();
+  setupSliders();
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  animate();
 }
 
 async function carregarCarrinho(){
-    try{
-        setStatus('⏳ Carregando shopping-cart.glb do seu repo...');
-        const cartModel = await loadKenney('shopping-cart.glb');
-        
-        // Normaliza o carrinho Kenney
-        const box = new THREE.Box3().setFromObject(cartModel);
-        const size = box.getSize(new THREE.Vector3());
-        const escala = 2.5 / Math.max(size.x,size.y,size.z);
-        cartModel.scale.setScalar(escala);
-        cartModel.position.set(-box.min.x*escala, -box.min.y*escala, -box.min.z*escala);
+  try{
+    setStatus('⏳ Carregando shopping-cart.glb...');
+    const model=await loadKenney('shopping-cart.glb');
+    const box=new THREE.Box3().setFromObject(model);
+    const size=box.getSize(new THREE.Vector3());
+    const escala=2.2/Math.max(size.x,size.y,size.z);
+    model.scale.setScalar(escala);
+    model.position.set(-box.min.x*escala,-box.min.y*escala,-box.min.z*escala);
 
-        shoppingCart = new THREE.Group();
-        shoppingCart.add(cartModel);
-        shoppingCart.position.set(-4,0,0);
-        scene.add(shoppingCart);
-        setStatus('✅ Carrinho carregado! Enchendo...', true);
-        isEntering = true;
-        await encherCarrinho();
-    }catch(e){
-        console.error(e);
-        setStatus('❌ Não achei '+encodeURI(BASE+'shopping-cart.glb')+' Verifique se fez Commit.', false);
-    }
+    // CALCULA CESTA AUTOMÁTICO
+    const box2=new THREE.Box3().setFromObject(model);
+    const s=box2.getSize(new THREE.Vector3());
+    CESTA.y=s.y*0.62; CESTA.largura=s.x*0.52; CESTA.profundidade=s.z*0.58; CESTA.z=s.z*0.08;
+    document.getElementById('sY').value=CESTA.y; document.getElementById('sZ').value=CESTA.z;
+    document.getElementById('sW').value=CESTA.largura; document.getElementById('sD').value=CESTA.profundidade;
+
+    shoppingCart=new THREE.Group(); shoppingCart.add(model); shoppingCart.position.set(-3,0,0); scene.add(shoppingCart);
+    setStatus('✅ Carrinho ok - ajuste a caixa verde',true);
+    encherCarrinho();
+  }catch(e){console.error(e); setStatus('❌ Não achei '+BASE+'shopping-cart.glb',false);}
 }
 
-async function encherCarrinho(){
-    if(!shoppingCart) return;
-    if(grupoProdutos){ shoppingCart.remove(grupoProdutos); }
-    grupoProdutos = new THREE.Group();
-    shoppingCart.add(grupoProdutos);
+function encherCarrinho(){
+  if(!shoppingCart)return;
+  if(grupoProdutos)shoppingCart.remove(grupoProdutos);
+  grupoProdutos=new THREE.Group(); shoppingCart.add(grupoProdutos);
 
-    if(DEBUG_CESTA){
-        const helper = new THREE.Mesh(new THREE.BoxGeometry(CESTA.largura,CESTA.altura,CESTA.profundidade), new THREE.MeshBasicMaterial({color:0x00ff88,wireframe:true}));
-        helper.position.set(CESTA.x,CESTA.y,CESTA.z);
-        grupoProdutos.add(helper);
-    }
+  helperCesta=new THREE.Mesh(new THREE.BoxGeometry(CESTA.largura,CESTA.altura,CESTA.profundidade), new THREE.MeshBasicMaterial({color:0x00ff88,wireframe:true}));
+  helperCesta.position.set(CESTA.x,CESTA.y,CESTA.z);
+  grupoProdutos.add(helperCesta);
 
-    const itens=[];
-    for(const p of PRODUTOS_KENNEY){
-        try{
-            const model = await loadKenney(p.arquivo);
-            // Se for prateleira, vamos pegar só o miolo e diminuir muito
-            for(let i=0;i<p.qtd;i++) itens.push(normalizarProduto(model.clone(true), p.tamanho));
-        }catch(err){ console.warn('Falhou', p.arquivo, err); }
-    }
-    distribuirNaCesta(itens);
-    itens.forEach(it=>grupoProdutos.add(it));
-    setStatus(`🛒 Carrinho montado com ${itens.length} volumes!`, true);
+  // PRODUTOS PROCEDURAIS QUE CABEM - no estilo Kenney
+  const cores=[0xe63946,0xf1c40f,0x2a9d8f,0xe76f51,0x457b9d,0xf4a261,0xffffff];
+  for(let i=0;i<16;i++){
+    const isCan=i%3===1; const isBox=i%3===0;
+    const h=isBox?0.22+Math.random()*0.1:isCan?0.20:0.14;
+    const geo=isBox?new THREE.BoxGeometry(0.16,h,0.10):isCan?new THREE.CylinderGeometry(0.06,0.06,h,16):new THREE.SphereGeometry(h/2,12,10);
+    const mat=new THREE.MeshStandardMaterial({color:cores[i%cores.length],roughness:0.8});
+    const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.position.y=h/2;
+    const w=new THREE.Group(); w.add(m); w.userData.h=h;
+    
+    const col=i%4; const row=Math.floor(i/4);
+    const px=(col/3-0.5)*CESTA.largura*0.7 + (Math.random()-0.5)*0.05;
+    const pz=(row/3-0.5)*CESTA.profundidade*0.6 + (Math.random()-0.5)*0.05;
+    const py= (row%2)*0.12; // 2 camadas
+    w.position.set(CESTA.x+px, CESTA.y-CESTA.altura/2+py+0.02, CESTA.z+pz);
+    w.rotation.y=Math.random()*6.28;
+    grupoProdutos.add(w);
+  }
 }
 
-function animate(){
-    requestAnimationFrame(animate);
-    const delta = clock.getDelta();
-    if(shoppingCart && isEntering){
-        shoppingCart.position.x = THREE.MathUtils.damp(shoppingCart.position.x, 0, 3, delta);
-        if(Math.abs(shoppingCart.position.x) < 0.01){ shoppingCart.position.x=0; isEntering=false; }
-    } else if(shoppingCart){
-        shoppingCart.rotation.y += 0.3*delta;
-    }
-    controls.update();
-    renderer.render(scene,camera);
+function setupSliders(){
+  const els={y:document.getElementById('sY'),z:document.getElementById('sZ'),w:document.getElementById('sW'),d:document.getElementById('sD')};
+  Object.values(els).forEach(el=>el.addEventListener('input',()=>{
+    CESTA.y=parseFloat(els.y.value); CESTA.z=parseFloat(els.z.value);
+    CESTA.largura=parseFloat(els.w.value); CESTA.profundidade=parseFloat(els.d.value);
+    if(helperCesta){helperCesta.position.set(CESTA.x,CESTA.y,CESTA.z); helperCesta.scale.set(CESTA.largura/0.55,1,CESTA.profundidade/0.75); }
+    console.log('CESTA =',JSON.stringify(CESTA));
+  }));
 }
-function resetAnimation(){
-    if(!shoppingCart) return;
-    shoppingCart.position.set(-4,0,0);
-    shoppingCart.rotation.y=0;
-    isEntering=true;
-}
+
+function animate(){requestAnimationFrame(animate);const dt=clock.getDelta();if(shoppingCart){if(shoppingCart.position.x<-0.01){shoppingCart.position.x=THREE.MathUtils.damp(shoppingCart.position.x,0,2,dt);}else shoppingCart.rotation.y+=0.2*dt;}controls.update();renderer.render(scene,camera);}
 init();
 </script>
 </body>
